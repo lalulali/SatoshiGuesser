@@ -134,6 +134,7 @@ async function main() {
 
   let busy = false;
   let autospinActive = autospinToggle.checked;
+  let spinSpeedMeasured = false;
 
   function updateAutospinButton() {
     if (autospinActive) {
@@ -310,6 +311,7 @@ async function main() {
     const reels = realisticMode ? realistic : classic;
     const noDelay = noDelayToggle.checked;
 
+    const spinStartTime = performance.now();
     if (!noDelay) reels.startSpin();
 
     let result;
@@ -357,7 +359,36 @@ async function main() {
     }
 
     busy = false;
-    pullBtn.disabled = false;
+    pullBtn.disabled = autospinActive;
+
+    // Measure spin speed on first spin only
+    if (!spinSpeedMeasured) {
+      spinSpeedMeasured = true;
+      const elapsed = performance.now() - spinStartTime;
+      const spinsPerSec = 1000 / elapsed;
+      const keyspace = 2 ** 256;
+      const yearsToExhaust = keyspace / (spinsPerSec * 60 * 60 * 24 * 365.25);
+      
+      const funFactEl = document.getElementById('fun-fact');
+      funFactEl.innerHTML = `
+        <div class="fun-fact-content">
+          <div class="fun-fact-stat">
+            <span class="fun-fact-label">Spin Speed</span>
+            <span class="fun-fact-value">${Math.round(spinsPerSec)}</span>
+            <span class="fun-fact-unit">keys/sec</span>
+          </div>
+          <div class="fun-fact-divider"></div>
+          <div class="fun-fact-stat">
+            <span class="fun-fact-label">Time to 2²⁵⁶</span>
+            <span class="fun-fact-value">${yearsToExhaust.toExponential(1)}</span>
+            <span class="fun-fact-unit">years</span>
+          </div>
+          <div class="fun-fact-sub">
+            ${(yearsToExhaust / 1e9).toExponential(1)}× the age of the universe
+          </div>
+        </div>
+      `;
+    }
 
     // Continue autospin if still active
     if (autospinActive) {

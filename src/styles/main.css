@@ -104,7 +104,23 @@ main {
   display: flex;
   justify-content: center;
   gap: 1.5rem;
-  margin-top: 1rem;
+  margin-top: 1.25rem;
+}
+
+.fun-fact {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #777;
+  line-height: 1.6;
+  max-width: 360px;
+  margin-top: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.fun-fact strong {
+  color: #999;
 }
 
 .settings-btn {
@@ -353,4 +369,70 @@ footer {
 }
 .settings-actions button:hover {
   border-color: var(--accent);
+}
+
+/* Fun fact section */
+.fun-fact {
+  margin-top: 1.5rem;
+  padding: 0.8rem 1rem;
+  background: linear-gradient(135deg, var(--panel-2) 0%, var(--panel) 100%);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.fun-fact-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.fun-fact-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.fun-fact-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+}
+
+.fun-fact-value {
+  font-family: var(--mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent-2);
+  text-shadow: 0 0 6px rgba(255, 209, 102, 0.25);
+}
+
+.fun-fact-unit {
+  font-size: 0.65rem;
+  color: var(--ink-dim);
+  font-family: var(--mono);
+}
+
+.fun-fact-divider {
+  width: 1px;
+  height: 2.5rem;
+  background: linear-gradient(to bottom, transparent, var(--border), transparent);
+}
+
+.fun-fact-sub {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  line-height: 1.3;
+  width: 100%;
+  margin-top: 0.3rem;
+}
+
+.fun-fact-sub strong {
+  color: var(--accent);
+  font-weight: 600;
 }

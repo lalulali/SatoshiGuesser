@@ -5,6 +5,7 @@ import {
   randomPrivKey,
   deriveAll,
   parsePrivKey,
+  privKeyToWif,
 } from './game/crypto.js';
 import { Log } from './ui/log.js';
 import { ClassicReels } from './ui/slot-classic.js';
@@ -91,8 +92,17 @@ async function main() {
   const realistic = new RealisticReels(
     document.getElementById('reels-realistic')
   );
-  classic.show();
-  realistic.hide();
+  
+  // Initialize based on checkbox state (realistic mode default)
+  const realisticToggle = document.getElementById('toggle-realistic');
+  let realisticMode = realisticToggle.checked;
+  if (realisticMode) {
+    classic.hide();
+    realistic.show();
+  } else {
+    classic.show();
+    realistic.hide();
+  }
 
   const winDialog = new WinDialog(
     document.getElementById('win-dialog'),
@@ -100,12 +110,12 @@ async function main() {
   );
 
   const pullBtn = document.getElementById('pull-btn');
-  const realisticToggle = document.getElementById('toggle-realistic');
+  const autospinBtn = document.getElementById('autospin-btn');
   const noDelayToggle = document.getElementById('toggle-no-delay');
   const autospinToggle = document.getElementById('toggle-autospin');
   const soundToggle = document.getElementById('toggle-sound');
 
-  let realisticMode = false;
+  // realisticMode already defined above, reuse it
   realisticToggle.addEventListener('change', (e) => {
     realisticMode = e.target.checked;
     if (realisticMode) {
@@ -122,9 +132,41 @@ async function main() {
     setMuted(!e.target.checked);
   });
 
+  let busy = false;
+  let autospinActive = autospinToggle.checked;
+
+  function updateAutospinButton() {
+    if (autospinActive) {
+      autospinBtn.classList.add('active');
+      autospinBtn.querySelector('.lever-text').textContent = 'STOP';
+      pullBtn.disabled = true;
+    } else {
+      autospinBtn.classList.remove('active');
+      autospinBtn.querySelector('.lever-text').textContent = 'AUTO';
+      pullBtn.disabled = busy;
+    }
+  }
+
+  function toggleAutospin() {
+    autospinActive = !autospinActive;
+    autospinToggle.checked = autospinActive;
+    updateAutospinButton();
+    if (autospinActive && !busy) {
+      onPull();
+    }
+  }
+
+  autospinBtn.addEventListener('click', toggleAutospin);
+
   autospinToggle.addEventListener('change', (e) => {
-    if (e.target.checked && !busy) onPull();
+    autospinActive = e.target.checked;
+    updateAutospinButton();
+    if (autospinActive && !busy) {
+      onPull();
+    }
   });
+
+  updateAutospinButton();
 
   // Settings dialog ----------------------------------------------------------
   const settingsBtn = document.getElementById('settings-btn');
@@ -173,7 +215,8 @@ async function main() {
       const hit = await checkHash160s(candidates);
       log.append(
         `manual: addr=${derived.addressUncompressed.slice(0, 8)}… ` +
-          `(${parsed.format}) → ${hit ? 'MATCH' : 'no match'}`
+          `(${parsed.format}) → ${hit ? 'MATCH' : 'no match'}`,
+        true // skip throttling for manual checks
       );
       if (hit) {
         setManualResult('🎉 Match! Opening prize dialog…', 'ok');
@@ -205,7 +248,44 @@ async function main() {
   // Dev-win flag for QA / curious source-readers.
   const devWin = new URLSearchParams(location.search).get('devwin') === '1';
 
-  let busy = false;
+  // Auto-save found address to file
+  function saveMatchToFile(result) {
+    const matchedAddress = hash160ToAddress(result.match.hash160);
+    const btc = (Number(result.match.balanceSats) / SATS_PER_BTC).toFixed(8);
+    const wif = privKeyToWif(result.privKey, true);
+    const content = [
+      `Satoshi Guesser - WINNING ADDRESS FOUND!`,
+      `=========================================`,
+      `Timestamp: ${new Date().toISOString()}`,
+      ``,
+      `Private Key (WIF): ${wif}`,
+      `Private Key (HEX): ${result.privKeyHex}`,
+      `Address: ${matchedAddress}`,
+      `Balance: ${btc} BTC (${Number(result.match.balanceSats).toLocaleString()} sats)`,
+    ].join('\n');
+
+    // Create download
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `satoshi-found-${Date.now()}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    // Also store in localStorage as backup
+    const wins = JSON.parse(localStorage.getItem('satoshiWins') || '[]');
+    wins.push({
+      timestamp: new Date().toISOString(),
+      privKey: result.privKey,
+      address: matchedAddress,
+      balanceSats: result.match.balanceSats.toString(),
+    });
+    localStorage.setItem('satoshiWins', JSON.stringify(wins));
+    
+    log.append(`💾 Saved to satoshi-found-${Date.now()}.txt`, true);
+  }
+
   async function onPull() {
     if (busy) return;
     busy = true;
@@ -242,7 +322,8 @@ async function main() {
 
     log.append(
       `key=${shorten(result.privKeyHex, 6)} ` +
-        `addr=${shorten(result.derived.addressUncompressed, 6)}`
+        `addr=${shorten(result.derived.addressUncompressed, 6)}`,
+      true // skip throttling for key info
     );
 
     if (noDelay) {
@@ -262,7 +343,13 @@ async function main() {
       );
       sfx.win();
       // Stop autospin on win — let the player see what happened.
-      if (autospinToggle.checked) autospinToggle.checked = false;
+      autospinActive = false;
+      autospinToggle.checked = false;
+      updateAutospinButton();
+      
+      // Auto-save to file
+      saveMatchToFile(result);
+      
       winDialog.show(result);
     } else {
       log.append('→ no match');
@@ -272,7 +359,8 @@ async function main() {
     busy = false;
     pullBtn.disabled = false;
 
-    if (autospinToggle.checked) {
+    // Continue autospin if still active
+    if (autospinActive) {
       const delay = noDelayToggle.checked
         ? AUTOSPIN_DELAY_NO_DELAY_MS
         : AUTOSPIN_DELAY_MS;
@@ -289,6 +377,11 @@ async function main() {
     e.preventDefault();
     onPull();
   });
+
+  // Trigger autospin on load if already checked
+  if (autospinActive && !busy) {
+    setTimeout(() => onPull(), 100);
+  }
 }
 
 main().catch((err) => {

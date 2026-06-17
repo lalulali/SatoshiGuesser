@@ -123,6 +123,16 @@ main {
   border-color: var(--accent);
 }
 
+/* Stop button state */
+button.stop {
+  background: var(--lose) !important;
+  border-color: var(--lose) !important;
+  color: #fff !important;
+}
+button.stop:hover {
+  background: #c03030 !important;
+}
+
 .checkbox {
   display: inline-flex;
   align-items: center;

@@ -43,9 +43,14 @@
             <!-- 64 hex cells injected at runtime -->
           </div>
 
-          <button class="lever" id="pull-btn" aria-label="Pull lever">
-            <span class="lever-text">PULL</span>
-          </button>
+          <div class="lever-group">
+            <button class="lever" id="pull-btn" aria-label="Pull lever">
+              <span class="lever-text">PULL</span>
+            </button>
+            <button class="lever autospin-btn" id="autospin-btn" aria-label="Toggle autospin">
+              <span class="lever-text">AUTO</span>
+            </button>
+          </div>
         </div>
 
         <div class="controls">
@@ -68,19 +73,19 @@
         <section class="settings-section">
           <h3>Reels &amp; sound</h3>
           <label class="checkbox">
-            <input type="checkbox" id="toggle-realistic" />
+            <input type="checkbox" id="toggle-realistic" checked />
             <span>Hexadecimal reels (64 hex)</span>
           </label>
           <label class="checkbox">
-            <input type="checkbox" id="toggle-no-delay" />
+            <input type="checkbox" id="toggle-no-delay" checked />
             <span>No delay (skip animation)</span>
           </label>
           <label class="checkbox">
-            <input type="checkbox" id="toggle-autospin" />
+            <input type="checkbox" id="toggle-autospin" checked />
             <span>Autospin</span>
           </label>
           <label class="checkbox">
-            <input type="checkbox" id="toggle-sound" checked />
+            <input type="checkbox" id="toggle-sound" />
             <span>Sound</span>
           </label>
         </section>
